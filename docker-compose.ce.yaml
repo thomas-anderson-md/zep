@@ -6,9 +6,10 @@ services:
     ports:
       - "8026:8026"
     volumes:
-      - ./zep.yaml:/app/config.yaml
+      - ./zep.yaml:/app/zep_config.yaml
     environment:
-      - ZEP_CONFIG_FILE=config.yaml
+      # tell Zep to load our custom file
+      - ZEP_CONFIG_FILE=zep_config.yaml
     networks:
       - shared-network
     depends_on:
