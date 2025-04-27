@@ -3,32 +3,30 @@ name: zep-ce
 services:
   zep:
     image: zepai/zep:latest
-    #    build:
-    #      context: .
-    #      dockerfile: Dockerfile.ce
     ports:
       - "8026:8026"
     volumes:
-      - ./zep.yaml:/app/zep.yaml
+      - ./zep.yaml:/app/config.yaml
     environment:
-      - ZEP_CONFIG_FILE=zep.yaml
+      - ZEP_CONFIG_FILE=config.yaml
     networks:
-      - zep-network
+      - shared-network
     depends_on:
       graphiti:
         condition: service_healthy
       db:
         condition: service_healthy
+
   db:
     image: ankane/pgvector:v0.5.1
     container_name: zep-ce-postgres
     restart: on-failure
-    shm_size: "128mb" # Increase this if vacuuming fails with a "no space left on device" error
+    shm_size: "128mb"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     networks:
-      - zep-network
+      - shared-network
     healthcheck:
       test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
       interval: 5s
@@ -38,6 +36,7 @@ services:
       - zep-db:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
   graphiti:
     image: zepai/graphiti:0.3
     ports:
@@ -45,7 +44,7 @@ services:
     env_file:
       - .env
     networks:
-      - zep-network
+      - shared-network
     healthcheck:
       test:
         [
@@ -67,10 +66,11 @@ services:
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=zepzepzep
       - PORT=8003
+
   neo4j:
     image: neo4j:5.22.0
     networks:
-      - zep-network
+      - shared-network
     healthcheck:
       test: wget http://localhost:7687 || exit 1
       interval: 1s
@@ -78,15 +78,17 @@ services:
       retries: 20
       start_period: 3s
     ports:
-      - "7474:7474" # HTTP
-      - "7687:7687" # Bolt
+      - "7474:7474"
+      - "7687:7687"
     volumes:
       - neo4j_data:/data
     environment:
       - NEO4J_AUTH=neo4j/zepzepzep
+
 volumes:
   neo4j_data:
   zep-db:
+
 networks:
-  zep-network:
+  shared-network:
     driver: bridge
